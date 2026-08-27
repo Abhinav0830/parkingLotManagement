@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ParkingHistoryRepository extends JpaRepository<ParkingHistory, Long> {
 
+    ParkingHistory findByVehicleNumberAndLotAndOutIsNull(String vehicleNumber, int lot);
 }
