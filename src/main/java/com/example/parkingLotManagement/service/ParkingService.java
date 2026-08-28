@@ -40,10 +40,10 @@ public class ParkingService {
     }
 
     @Transactional
-    public ResponseEntity<LockResponse> assignParking(LockRequest lockRequest){
+    public LockResponse lockLot(LockRequest lockRequest){
         List<ParkingLot> avail = parkingLotRepository.findBylevelAndTypeAndAvailableTrue(lockRequest.getLevel(),lockRequest.getType());
         if(avail.isEmpty()){
-            return ResponseEntity.badRequest().build();
+            return null;
         }
         Random rand = new Random();
         int ind = rand.nextInt(avail.size());
@@ -79,12 +79,13 @@ public class ParkingService {
         response.setLotNumber(selected.getLot());
         response.setVehicleNumber(lockRequest.getVehicleNumber());
 
-        return ResponseEntity.ok(response);
+        return response;
 
 
     }
 
-    public ResponseEntity<UnlockResponse> unlockLot(UnlockRequest unlockRequest){
+    @Transactional
+    public UnlockResponse unlockLot(UnlockRequest unlockRequest){
         LocalDateTime out = LocalDateTime.now();
         ParkingHistory history = parkingHistoryRepository.findByVehicleNumberAndLotAndOutIsNull(unlockRequest.getVehicleNumber(),unlockRequest.getLot());
         history.setOut(out);
@@ -114,7 +115,7 @@ public class ParkingService {
         response.setOut(history.getOut());
         response.setVehicleNumber(unlockRequest.getVehicleNumber());
 
-        return ResponseEntity.ok(response);
+        return response;
 
     }
 
