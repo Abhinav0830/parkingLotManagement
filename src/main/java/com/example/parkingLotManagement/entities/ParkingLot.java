@@ -1,6 +1,7 @@
 package com.example.parkingLotManagement.entities;
 
 
+import com.example.parkingLotManagement.enums.VehicleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,4 +21,6 @@ public class ParkingLot {
     private boolean available = true;
     private int level;
     private int lot;
+    @Enumerated(EnumType.STRING)
+    private VehicleType type;
 }

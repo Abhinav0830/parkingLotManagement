@@ -27,7 +27,9 @@ public class ParkingHistory {
     private VehicleType vehicleType;
     private String vehicleNumber;
     private int lot;
+    @Column(name = "in_time")
     private LocalDateTime in;
+    @Column(name = "out_time")
     private LocalDateTime out;
     private double fee;
 

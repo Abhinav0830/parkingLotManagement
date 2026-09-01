@@ -9,14 +9,14 @@ import com.example.parkingLotManagement.repositories.ParkingHistoryRepository;
 import com.example.parkingLotManagement.repositories.ParkingLotRepository;
 import com.example.parkingLotManagement.repositories.ParkingSpaceRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Service
 public class ParkingService {
 
     private final ParkingSpaceRepository parkingSpaceRepository;
@@ -41,7 +41,7 @@ public class ParkingService {
 
     @Transactional
     public LockResponse lockLot(LockRequest lockRequest){
-        List<ParkingLot> avail = parkingLotRepository.findBylevelAndTypeAndAvailableTrue(lockRequest.getLevel(),lockRequest.getType());
+        List<ParkingLot> avail = parkingLotRepository.findByLevelAndTypeAndAvailableTrue(lockRequest.getLevel(),lockRequest.getType());
         if(avail.isEmpty()){
             return null;
         }
