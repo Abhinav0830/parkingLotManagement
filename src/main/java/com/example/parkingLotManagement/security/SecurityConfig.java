@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/parking/lock").hasRole("ADMIN")
                         .requestMatchers("/api/parking/unlock").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/bookings/**").hasAnyRole("ADMIN","USER")
                         .anyRequest().authenticated())
                 .httpBasic(httpBasic ->{});
 

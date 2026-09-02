@@ -96,14 +96,13 @@ public class ParkingService {
 
         ParkingSpace space = parkingSpaceRepository.findByLevel(lockRequest.getLevel());
         VehicleType type = lockRequest.getType();
-        if(type == VehicleType.FW){
+        if(type == VehicleType.FW && space.getFwa()>0){
             space.setFwa(space.getFwa()-1);
-
         }
-        else{
+        else if(type == VehicleType.TW && space.getTwa()>0){
             space.setTwa(space.getTwa()-1);
         }
-        parkingSpaceRepository.save(space);
+
 
         LocalDateTime in = LocalDateTime.now();
 
@@ -121,6 +120,7 @@ public class ParkingService {
         response.setType(lockRequest.getType());
         response.setLotNumber(selected.getLot());
         response.setVehicleNumber(lockRequest.getVehicleNumber());
+        response.setId(selected.getId());
 
         return response;
 
@@ -158,6 +158,7 @@ public class ParkingService {
         response.setLotNumber(history.getLot());
         response.setOut(history.getOut());
         response.setVehicleNumber(unlockRequest.getVehicleNumber());
+        response.setId(history.getId());
 
         return response;
 

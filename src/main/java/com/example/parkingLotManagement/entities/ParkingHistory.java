@@ -31,6 +31,7 @@ public class ParkingHistory {
     private LocalDateTime in;
     @Column(name = "out_time")
     private LocalDateTime out;
+    @Column(nullable = true)
     private double fee;
 
 }

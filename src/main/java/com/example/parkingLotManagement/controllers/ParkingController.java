@@ -29,10 +29,11 @@ public class ParkingController {
 
     @PostMapping("/lock")
     public ResponseEntity<LockResponse> lockLot(@RequestBody LockRequest lockRequest){
-        if(parkingService.lockLot(lockRequest) == null){
+        LockResponse response = parkingService.lockLot(lockRequest);
+        if(response == null){
             return ResponseEntity.ok(null);
         }
-        return ResponseEntity.ok(parkingService.lockLot(lockRequest));
+        return ResponseEntity.ok(response);
     }
     @PostMapping("/unlock")
     public ResponseEntity<UnlockResponse> unlockLot(@RequestBody UnlockRequest unlockRequest) {
