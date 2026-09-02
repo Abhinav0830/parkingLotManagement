@@ -4,11 +4,16 @@ import com.example.parkingLotManagement.dtos.*;
 import com.example.parkingLotManagement.entities.ParkingHistory;
 import com.example.parkingLotManagement.entities.ParkingLot;
 import com.example.parkingLotManagement.entities.ParkingSpace;
+import com.example.parkingLotManagement.entities.PreBooking;
+import com.example.parkingLotManagement.enums.BookingStatus;
 import com.example.parkingLotManagement.enums.VehicleType;
+import com.example.parkingLotManagement.exceptions.ResourceNotFoundException;
 import com.example.parkingLotManagement.repositories.ParkingHistoryRepository;
 import com.example.parkingLotManagement.repositories.ParkingLotRepository;
 import com.example.parkingLotManagement.repositories.ParkingSpaceRepository;
+import com.example.parkingLotManagement.repositories.PreBookingRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,32 +27,70 @@ public class ParkingService {
     private final ParkingSpaceRepository parkingSpaceRepository;
     private final ParkingLotRepository parkingLotRepository;
     private final ParkingHistoryRepository parkingHistoryRepository;
+    private final PreBookingRepository preBookingRepository;
 
-    public ParkingService(ParkingSpaceRepository parkingSpaceRepository, ParkingLotRepository parkingLotRepository,ParkingHistoryRepository parkingHistoryRepository){
+    public ParkingService(PreBookingRepository preBookingRepository,ParkingSpaceRepository parkingSpaceRepository, ParkingLotRepository parkingLotRepository,ParkingHistoryRepository parkingHistoryRepository){
         this.parkingSpaceRepository = parkingSpaceRepository;
         this.parkingLotRepository = parkingLotRepository;
         this.parkingHistoryRepository = parkingHistoryRepository;
+        this.preBookingRepository = preBookingRepository;
     }
-
-    public List<PublicAvailabilityResponse> getAvailability(){
+    @Transactional
+    public List<AvailabilityResponse> getAvailability(Authentication auth){
         List<ParkingSpace> spaces = parkingSpaceRepository.findAll();
-        List<PublicAvailabilityResponse> availability = new ArrayList<>();
-        for(ParkingSpace s : spaces){
-            PublicAvailabilityResponse response = new PublicAvailabilityResponse(s.getLevel(),s.getTwa()>0,s.getFwa()>0);
-            availability.add(response);
+        List<AvailabilityResponse> availability = new ArrayList<>();
+        if(auth.getAuthorities().iterator().next().getAuthority().equals("ROLE_USER")){
+            for(ParkingSpace s : spaces){
+                AvailabilityResponse response = new PublicAvailabilityResponse(s.getLevel(),s.getTwa()>0,s.getFwa()>0);
+                availability.add(response);
+            }
+        }
+        else if(auth.getAuthorities().iterator().next().getAuthority().equals("ROLE_ADMIN")){
+
+            for(ParkingSpace s : spaces){
+                AvailabilityResponse response = new AdminAvailabilityResponse(s.getLevel(),s.getTwa(),s.getFwa());
+                availability.add(response);
+            }
         }
         return availability;
     }
 
     @Transactional
     public LockResponse lockLot(LockRequest lockRequest){
-        List<ParkingLot> avail = parkingLotRepository.findByLevelAndTypeAndAvailableTrue(lockRequest.getLevel(),lockRequest.getType());
-        if(avail.isEmpty()){
-            return null;
+        ParkingLot selected = null;
+        List<PreBooking> bookings =
+                preBookingRepository.findByVehicleNumberAndStatus(lockRequest.getVehicleNumber(), BookingStatus.RESERVED);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        for (PreBooking booking : bookings) {
+            if (booking.getLevel() == lockRequest.getLevel()
+                    && booking.getType() == lockRequest.getType()
+                    && !now.isBefore(booking.getStartTime())
+                    && now.isBefore(booking.getEndTime())) {
+                selected = parkingLotRepository.findByLevelAndLot(booking.getLevel(), booking.getLot());
+                break;
+            }
         }
-        Random rand = new Random();
-        int ind = rand.nextInt(avail.size());
-        ParkingLot selected = avail.get(ind);
+        if (selected == null) {
+            List<ParkingLot> avail =
+                    parkingLotRepository.findByLevelAndTypeAndAvailableTrue(lockRequest.getLevel(), lockRequest.getType());
+            if (avail.isEmpty()) {
+                throw new ResourceNotFoundException(
+                        "No available lot found for level "
+                                + lockRequest.getLevel()
+                                + " and vehicle type "
+                                + lockRequest.getType()
+                );
+            }
+            Random rand = new Random();
+            int ind = rand.nextInt(avail.size());
+            selected = avail.get(ind);
+        }
+
+        if (!selected.isAvailable()) {
+            throw new IllegalArgumentException("Parking lot " + selected.getLot() + " is currently occupied");
+        }
         selected.setAvailable(false);
         parkingLotRepository.save(selected);
 
@@ -87,7 +130,8 @@ public class ParkingService {
     @Transactional
     public UnlockResponse unlockLot(UnlockRequest unlockRequest){
         LocalDateTime out = LocalDateTime.now();
-        ParkingHistory history = parkingHistoryRepository.findByVehicleNumberAndLotAndOutIsNull(unlockRequest.getVehicleNumber(),unlockRequest.getLot());
+        ParkingHistory history = parkingHistoryRepository.findByVehicleNumberAndLotAndOutIsNull(unlockRequest.getVehicleNumber(),unlockRequest.getLot())
+                .orElseThrow(() -> new ResourceNotFoundException("No active parking record for vehiccle " + unlockRequest.getVehicleNumber()+ " in lot " + unlockRequest.getLot()));
         history.setOut(out);
 
         double fee = calculateFee(history.getIn(),out);

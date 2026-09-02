@@ -1,6 +1,6 @@
 package com.example.parkingLotManagement.controllers;
 
-import com.example.parkingLotManagement.dtos.RegisterRequest;
+import com.example.parkingLotManagement.entities.User;
 import com.example.parkingLotManagement.dtos.UserResponse;
 import com.example.parkingLotManagement.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -10,17 +10,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
-public class UserController {
+@RequestMapping("/api/admin")
+public class AdminController {
+
     private final UserService userService;
 
-    public UserController(UserService userService){
+    public AdminController(UserService userService){
         this.userService = userService;
     }
-
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest registerRequest){
-        return  ResponseEntity.ok(userService.registerUser(registerRequest));
+    @PostMapping("/create")
+    public ResponseEntity<UserResponse> createUser(@RequestBody User user){
+        return ResponseEntity.ok(userService.createUser(user));
     }
-
 }

@@ -3,6 +3,7 @@ package com.example.parkingLotManagement.controllers;
 import com.example.parkingLotManagement.dtos.*;
 import com.example.parkingLotManagement.service.ParkingService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +14,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import java.util.List;
 
 @Controller
-@RequestMapping("/parkingLotManager")
+@RequestMapping("/api/parking")
 public class ParkingController {
 
     ParkingService parkingService;
@@ -22,8 +23,8 @@ public class ParkingController {
     }
 
     @GetMapping("/availability")
-    public ResponseEntity<List<PublicAvailabilityResponse>> availability(){
-         return ResponseEntity.ok(parkingService.getAvailability());
+    public ResponseEntity<List<AvailabilityResponse>> availability(Authentication auth){
+         return ResponseEntity.ok(parkingService.getAvailability(auth));
     }
 
     @PostMapping("/lock")
